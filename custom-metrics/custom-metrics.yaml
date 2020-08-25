@@ -1,0 +1,17 @@
+prometheus:
+    url: http://prometheus-prometheus-oper-prometheus
+    port: 9090
+rules:
+    default: false
+    custom:
+    - seriesQuery: '{__name__=~"^gadgetron_reconstruction_start_total$"}'
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+          pod:
+            resource: pod
+      name:
+        matches: ^(.*)
+        as: "gadgetron_activity"
+      metricsQuery: ceil(sum(rate(<<.Series>>{<<.LabelMatchers>>}[10m])) by (<<.GroupBy>>))

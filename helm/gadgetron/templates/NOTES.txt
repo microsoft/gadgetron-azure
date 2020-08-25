@@ -1,0 +1,8 @@
+1. Get the cluster IP address and port:
+
+  GTCLUSTERIP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "gadgetron.fullname" . }} --output=json | jq -r .spec.clusterIP)
+  GTPORT={{ .Values.service.port }}
+
+2. Port forward to Gadgetron:
+
+  kubectl port-forward service/{{ include "gadgetron.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}

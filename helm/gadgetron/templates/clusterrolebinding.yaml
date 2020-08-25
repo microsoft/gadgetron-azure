@@ -1,0 +1,14 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "gadgetron.fullname" . }}
+  labels:
+{{ include "gadgetron.labels" . | indent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: {{ include "gadgetron.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io

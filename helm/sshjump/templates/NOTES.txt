@@ -1,0 +1,4 @@
+1. Get the application URL by running these commands:
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "sshjump.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo $SERVICE_IP:{{ .Values.service.port }}

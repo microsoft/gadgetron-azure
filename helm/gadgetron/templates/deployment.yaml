@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gadgetron.fullname" . }}
+  labels:
+    {{- include "gadgetron.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gadgetron.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        {{- include "gadgetron.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["bash", "-c", "gadgetron | tee /tmp/gadgetron_log/gadgetron.log"]
+          lifecycle:
+            preStop:
+              exec:
+                command: ["bash","-c","/opt/scripts/pre_stop.sh"]
+          env:
+          - name: GADGETRON_REMOTE_WORKER_COMMAND
+            value: "/opt/scripts/node_info.sh {{ include "gadgetron.fullname" . }}"
+          ports:
+          - containerPort: 9002
+          volumeMounts:
+            - mountPath: "/tmp/gadgetron"
+              name: {{ include "gadgetron.dependenciesname" . }}
+            - mountPath: "/tmp/gadgetron_data"
+              name: {{ include "gadgetron.dataname" . }}
+            - mountPath: "/tmp/gadgetron_log"
+              name: gadgetronlog
+            - name: script-volume
+              mountPath: /opt/scripts
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        - name: logmon
+          image: hansenms/gadgetron_log_monitor:0.1
+          env:
+            - name: GADGETRON_LOG_FILE
+              value: "/tmp/gadgetron_log/gadgetron.log"
+          ports:
+          - containerPort: 8080
+          volumeMounts:
+            - mountPath: "/tmp/gadgetron_log"
+              name: gadgetronlog
+#      terminationGracePeriodSeconds: 600
+      volumes:
+      - name: {{ include "gadgetron.dependenciesname" . }}
+        persistentVolumeClaim:
+          claimName: {{ include "gadgetron.dependenciesname" . }}
+      - name: {{ include "gadgetron.dataname" . }}
+        persistentVolumeClaim:
+          claimName: {{ include "gadgetron.dataname" . }}
+      - name: gadgetronlog
+        emptyDir: {}
+      - name: script-volume
+        configMap:
+          name: {{ include "gadgetron.fullname" . }}-scripts
+          defaultMode: 0777
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

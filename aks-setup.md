@@ -1,0 +1,82 @@
+# Azure Kubernetes Service (AKS) for Gadgetron
+
+These instructions follow the basic AKS setup instructions with a few variations to enable easy deployment of the [Gadgetron](https://github.com/gadgetron/gadgetron).
+
+The installations are assuming you are on Linux or in Windows Subsystem for Linux (WSL), but they should work (possibly with minor tweaks) on other platforms.
+
+## Pre-requisites
+
+1. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
+1. `kubectl`, which can be installed with `az aks install-cli`.
+1. `helm` (version 3). Follow the standard [helm install instructions](https://helm.sh/docs/intro/install/).
+
+## Deploy AKS cluster
+
+```bash
+# Some settings
+resourceGroupName="my-gadgetron-resource-group"
+clusterName="mygadgetroncluster"
+location="westus2"
+vmSize="Standard_F4"
+maxNodeCount="10"
+
+# First create a resource group
+az group create --name $resourceGroupName --location $location
+
+# Now create the AKS cluster and enable the cluster autoscaler
+az aks create \
+  --resource-group $resourceGroupName \
+  --name $clusterName \
+  --node-count 1 \
+  --node-vm-size $vmSize \
+  --vm-set-type VirtualMachineScaleSets \
+  --load-balancer-sku standard \
+  --enable-cluster-autoscaler \
+  --min-count 1 \
+  --max-count $maxNodeCount \
+  --enable-managed-identity \
+  --generate-ssh-keys
+```
+
+Get credentials:
+
+```bash
+az aks get-credentials --resource-group $resourceGroupName --name $clusterName
+```
+
+Make sure you can communicate with the cluster, e.g.:
+
+```bash
+kubectl get nodes
+```
+
+## Add and use new node pool
+
+To add a node pool with a specific VM size, e.g. `Standard_D14_v2`:
+
+```bash
+az aks nodepool add \
+  --resource-group $resourceGroupName \
+  --cluster-name $clusterName \
+  --name mynodepool \
+  --node-vm-size Standard_D14_v2 \
+  --node-count 1 \
+  --enable-cluster-autoscaler \
+  --min-count 1 \
+  --max-count 3 
+```
+
+And then to deploy a new gagetron deployment to that node pool:
+
+```
+helm install --set nodeSelector.agentpool=mynodepool mygadgetrondeployment helm/gadgetron/
+```
+
+To delete the node pool, first remove any deployment on the node pool and then:
+
+```bash
+az aks nodepool delete \
+  --resource-group $resourceGroupName \
+  --cluster-name $clusterName \
+  --name mynodepool
+```

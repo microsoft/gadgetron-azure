@@ -1,0 +1,11 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: default
+  name: {{ include "gadgetron.fullname" . }}
+  labels:
+{{ include "gadgetron.labels" . | indent 4 }}
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["services", "pods", "endpoints"]
+  verbs: ["get", "watch", "list"]

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gadgetron.fullname" . }}-scripts
+data:
+  node_info.sh: |
+    #!/bin/bash
+    nodeinfo=$(wget -O - -o /dev/null --ca-certificate /var/run/secrets/kubernetes.io/serviceaccount/ca.crt --header "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" https://kubernetes/api/v1/namespaces/default/endpoints/$1)
+    echo $nodeinfo  | jq '[(.subsets[0].addresses[].ip + ":9002")]'
+  pre_stop.sh: |
+    #!/bin/bash
+
+    #Now wait until all reconstructions are done
+    while [[ $(netstat -a|grep ESTABLISHED) ]]; do
+        echo "Waiting for established connections to close..."
+        sleep 5
+    done

@@ -1,0 +1,4 @@
+1. Get the application URL by running these commands:
+
+  SERVICE_IP: kubectl get svc --namespace {{ .Release.Namespace }} {{ include "iperf3.fullname" . }} --output=json | jq -r .spec.clusterIP
+  PORT: {{ .Values.service.port }}
