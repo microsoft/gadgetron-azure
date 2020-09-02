@@ -73,6 +73,62 @@ kubectl port-forward svc/<helm release>-gadgetron 9002:9002
 
 And then connect directly to `localhost:9002`.
 
+## Connecting with stunnel (recommended approach)
+
+The repo contains a helm chart for deploying [stunnel](https://stunnel.org) for secure access to the Gadgetron in the cluster. To deploy the `stunnel` server, you must first have some secrets (pre-shared keys). You can generate those and store them as a secret in the cluster with:
+
+```bash
+cd stunnel
+./create-stunnel-secrets.sh
+```
+
+This will create an `stunnel.secrets` file containing 10 client secrets. You can also supply your own file prior to running the script. After running the script confirm that you have an `stunnel` secret in the cluster with `kubectl get secrets`.
+
+If you have deployed the Gadgetron in the cluster with a helm release name of say `gt1`, the DNS name of the gadgetron service would be `gt1-gadgetron` and you can deploy an `stunnel` to interface with that Gadgetron deployment by creating a `values.yaml` file:
+
+```yaml
+stunnel:
+  secretName: stunnel
+  connections:
+    gadgetron:
+      listenPort: 9002
+      connectHost: gt1-gadgetron
+      connectPort: 9002
+service:
+  dnsPrefix: mytunneldnsname
+```
+The `service.dnsPrefix` is optional, but when deployed in AKS, it will assign a DNS name to the public IP address of the `LoadBalancer` so that you can reference it with something like `mytunneldnsname.westus2.cloudapp.azure.com` instead of the IP address, which may change as you redeploy.
+
+Then deploy the `stunnel` with:
+
+```bash
+helm upgrade --install -f values.yaml
+```
+
+On some other host on your network, you can then install `stunnel` and create an `stunnel.conf` file:
+
+```
+[gadgetron]
+client = yes
+accept = 9002
+connect = <ip or dns name of tunnel service>:9002
+PSKsecrets = stunnel.secrets
+```
+
+The `stunnel.secrets` file must contain one of the pre-shared secrets created with the `create-stunnel-secrets.sh`, e.g. it could look like:
+
+```
+client1:4ZYJY+HoIX1xxZM563VpppejPJNQ4S4Z
+```
+
+Start the stunnel with:
+
+```bash
+stunnel stunnel.conf
+```
+
+And you should now be able to connect to the Gadgetron from port 9002 on the host where you are running the `stunnel` client.
+
 ## Connecting with VPN (Azure)
 
 To connect secure to the Gadgetron in the Kubernetes cluster, it is recommended that you establish a VPN point to site connection. Please consult the [Azure P2S VPN guide](https://docs.microsoft.com/en-us/azure/vpn-gateway/vpn-gateway-howto-point-to-site-resource-manager-portal). The basic steps are:
@@ -85,7 +141,7 @@ To connect secure to the Gadgetron in the Kubernetes cluster, it is recommended 
 
 ## Connecting with SSH jump server
 
-This repo contains a helm chart and other artifacts for deploying an SSH jump server in the cluster and you can use this jump server to establish an SSH tunnel. Maintaining these tunnels can be cumbersome and VPN is the recommended approach. That said, an SSH jump server can provide a fast way to test the deployment. 
+This repo contains a helm chart and other artifacts for deploying an SSH jump server in the cluster and you can use this jump server to establish an SSH tunnel. Maintaining these tunnels can be cumbersome and stunnel (see above) is the recommended approach. That said, an SSH jump server can provide a fast way to test the deployment. 
 
 ### Deploy SSH jump server:
 
