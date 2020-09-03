@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "stunnel.fullname" . }}
+data:
+  stunnel.conf: |
+    foreground=yes
+
+    {{- range $conn, $connSettings := .Values.stunnel.connections }}
+    [{{ $conn }}]
+    accept = {{ $connSettings.listenPort }}
+    connect = {{ $connSettings.connectHost }}:{{ $connSettings.connectPort }}
+    ciphers = PSK
+    PSKsecrets = /stunnel/secrets/stunnel.secrets
+    {{- end }}
+  
