@@ -1,13 +1,13 @@
 
 # Gadgetron in Kubernetes
 
-This repository contains a setup for running a distributed deployment of the [Gadgetron](https://github.com/gadgetron/gadgetron) in a Kubernetes cluster. 
+This repository contains a setup for running a distributed deployment of the [Gadgetron](https://github.com/gadgetron/gadgetron) in a Kubernetes cluster. The setup has been developed for and tested with [Azure Kubernetes Service (AKS)](https://azure.microsoft.com/services/kubernetes-service) but should work on other Kubernetes deploymentes too.
 
 The setup uses [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) to adjust the number of Gadgetron instances (pods) running in the cluster in response to gadgetron activity and it relies on [cluster-autoscaling](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) to adjust the number of nodes. Specifically, an increase reconstruction activity will lead to the deployment of more Gadgetron instances and when the resources on existing nodes are exhausted more will be added. Idle nodes will be removed from the cluster after some idle time. 
 
 Shared files (dependencies and exported data) are stored in persistent volumes, which could be backed by [Azure Files](https://azure.microsoft.com/en-us/services/storage/files/).
 
-The Gadgetron used a script to discover remote worker nodes. The script is specified in the `GADGETRON_REMOTE_WORKER_COMMAND` environment variable, which references a script added in a ConfigMap. The is also a PreStop lifecycle hook script, which is used to ensure that Gadgetron instances with active connections are not abruptly disconnected. 
+The Gadgetron uses a script to discover remote worker nodes. The script is specified in the `GADGETRON_REMOTE_WORKER_COMMAND` environment variable, which references a script added in a ConfigMap. The is also a PreStop lifecycle hook script, which is used to ensure that Gadgetron instances with active connections are not abruptly disconnected. 
 
 ## Deployment Instructions
 
@@ -33,7 +33,7 @@ The Gadgetron used a script to discover remote worker nodes. The script is speci
 
     The Prometheus Adapter is responsible for aggregating metrics from Promtheus and exposing them as custom metrics that we can use for scaling the Gadgetron. 
 
-1. Deploy gadgetron in AKS with helm chart:
+1. Deploy Gadgetron with helm chart:
 
     ```bash
     helm install <nameofgadgetroninstance> helm/gadgetron/
@@ -105,7 +105,7 @@ Then deploy the `stunnel` with:
 helm upgrade --install -f values.yaml
 ```
 
-On some other host on your network, you can then install `stunnel` and create an `stunnel.conf` file:
+On some other host on your (on-prem) network, you can then install `stunnel` and create an `stunnel.conf` file:
 
 ```
 [gadgetron]
@@ -131,17 +131,16 @@ And you should now be able to connect to the Gadgetron from port 9002 on the hos
 
 ## Connecting with VPN (Azure)
 
-To connect secure to the Gadgetron in the Kubernetes cluster, it is recommended that you establish a VPN point to site connection. Please consult the [Azure P2S VPN guide](https://docs.microsoft.com/en-us/azure/vpn-gateway/vpn-gateway-howto-point-to-site-resource-manager-portal). The basic steps are:
+You can use VPN to connect to the Gadgetron in the Kubernetes cluster, it is recommended that you establish a VPN point to site connection. Please consult the [Azure P2S VPN guide](https://docs.microsoft.com/en-us/azure/vpn-gateway/vpn-gateway-howto-point-to-site-resource-manager-portal). The basic steps are:
 
 1. Create a gateway subnet in your [AKS cluster network](https://docs.microsoft.com/azure/aks/concepts-network).
 1. Create a VPN Gateway in the subnet.
 1. Obtain/generate keys and [install client software](https://docs.microsoft.com/en-us/azure/vpn-gateway/point-to-site-vpn-client-configuration-azure-cert).
 1. Connect securely using VPN connection.
 
+## Connecting with SSH jump server (to be deprecated)
 
-## Connecting with SSH jump server
-
-This repo contains a helm chart and other artifacts for deploying an SSH jump server in the cluster and you can use this jump server to establish an SSH tunnel. Maintaining these tunnels can be cumbersome and stunnel (see above) is the recommended approach. That said, an SSH jump server can provide a fast way to test the deployment. 
+This repo also contains a helm chart and other artifacts for deploying an SSH jump server in the cluster and you can use this jump server to establish an SSH tunnel. Maintaining these tunnels can be cumbersome and **stunnel (see above) is the recommended approach**. That said, an SSH jump server can provide an alternative way to test the deployment. 
 
 ### Deploy SSH jump server:
 
