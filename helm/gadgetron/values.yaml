@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: gadgetron/ubuntu_2004
+  repository: ghcr.io/gadgetron/gadgetron/gadgetron_ubuntu_2004:latest
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []

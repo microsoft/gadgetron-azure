@@ -73,7 +73,55 @@ kubectl port-forward svc/<helm release>-gadgetron 9002:9002
 
 And then connect directly to `localhost:9002`.
 
-## Connecting with stunnel (recommended approach)
+## Connecting with SSH jump server
+
+This repo also contains a helm chart and other artifacts for deploying an SSH jump server in the cluster and you can use this jump server to establish an SSH tunnel. Maintaining these tunnels can be cumbersome and **stunnel (see below) is an easier approach**. That said, an SSH jump server may be the only way to access from say an imaging device. 
+
+### Deploy SSH jump server:
+
+> Approach adopted from [https://github.com/kubernetes-contrib/jumpserver](https://github.com/kubernetes-contrib/jumpserver).
+
+First deploy the ssh key:
+
+```bash
+#Get an SSH key, here we are using the one for the current user
+SSHKEY=$(cat ~/.ssh/id_rsa.pub |base64 -w 0)
+sed "s/PUBLIC_KEY/$SSHKEY/" gadgetron-ssh-secret.yaml.tmpl > gadgetron-ssh-secret.yaml
+
+#Create a secret with the key
+kubectl create -f gadgetron-ssh-secret.yaml
+```
+
+This will install the key in a kubernetes secret called `sshkey`, you can edit `gadgetron-ssh-secret.yaml` to give the key a different name. 
+
+Then deploy the jump server:
+
+```bash
+helm install sshjump helm/sshjump
+```
+
+Or with a custom ssh key secret:
+
+```bash
+helm install --set sshKeySecret=alternative-ssh-secret-name sshjump2 helm/sshjump/
+```
+
+### Connecting with SSH to the jump server
+
+The jump sever enables the "standard" Gadgetron connection paradigm through an SSH tunnel. The Gadgetron instances themselves are not directly accessible. Discover the relvant IPs and open a tunnel with:
+
+```bash
+#Public (external) IP:
+EXTERNALIP=$(kubectl get svc <sshd-jumpserver-svc> --output=json | jq -r .status.loadBalancer.ingress[0].ip)
+
+#Internal (cluster) IP:
+GTCLUSTERIP=$(kubectl get svc <gadgetron-frontend> --output=json | jq -r .spec.clusterIP)
+
+#Open tunnel:
+ssh -L 9022:${GTCLUSTERIP}:9002 root@${EXTERNALIP}
+```
+
+## Connecting with stunnel
 
 The repo contains a helm chart for deploying [stunnel](https://stunnel.org) for secure access to the Gadgetron in the cluster. To deploy the `stunnel` server, you must first have some secrets (pre-shared keys). You can generate those and store them as a secret in the cluster with:
 
@@ -137,54 +185,6 @@ You can use VPN to connect to the Gadgetron in the Kubernetes cluster, it is rec
 1. Create a VPN Gateway in the subnet.
 1. Obtain/generate keys and [install client software](https://docs.microsoft.com/en-us/azure/vpn-gateway/point-to-site-vpn-client-configuration-azure-cert).
 1. Connect securely using VPN connection.
-
-## Connecting with SSH jump server (to be deprecated)
-
-This repo also contains a helm chart and other artifacts for deploying an SSH jump server in the cluster and you can use this jump server to establish an SSH tunnel. Maintaining these tunnels can be cumbersome and **stunnel (see above) is the recommended approach**. That said, an SSH jump server can provide an alternative way to test the deployment. 
-
-### Deploy SSH jump server:
-
-> Approach adopted from [https://github.com/kubernetes-contrib/jumpserver](https://github.com/kubernetes-contrib/jumpserver).
-
-First deploy the ssh key:
-
-```bash
-#Get an SSH key, here we are using the one for the current user
-SSHKEY=$(cat ~/.ssh/id_rsa.pub |base64 -w 0)
-sed "s/PUBLIC_KEY/$SSHKEY/" gadgetron-ssh-secret.yaml.tmpl > gadgetron-ssh-secret.yaml
-
-#Create a secret with the key
-kubectl create -f gadgetron-ssh-secret.yaml
-```
-
-This will install the key in a kubernetes secret called `sshkey`, you can edit `gadgetron-ssh-secret.yaml` to give the key a different name. 
-
-Then deploy the jump server:
-
-```bash
-helm install sshjump helm/sshjump
-```
-
-Or with a custom ssh key secret:
-
-```bash
-helm install --set sshKeySecret=alternative-ssh-secret-name sshjump2 helm/sshjump/
-```
-
-### Connecting with SSH to the jump server
-
-The jump sever enables the "standard" Gadgetron connection paradigm through an SSH tunnel. The Gadgetron instances themselves are not directly accessible. Discover the relvant IPs and open a tunnel with:
-
-```bash
-#Public (external) IP:
-EXTERNALIP=$(kubectl get svc <sshd-jumpserver-svc> --output=json | jq -r .status.loadBalancer.ingress[0].ip)
-
-#Internal (cluster) IP:
-GTCLUSTERIP=$(kubectl get svc <gadgetron-frontend> --output=json | jq -r .spec.clusterIP)
-
-#Open tunnel:
-ssh -L 9022:${GTCLUSTERIP}:9002 root@${EXTERNALIP}
-```
 
 # Contributing
 
