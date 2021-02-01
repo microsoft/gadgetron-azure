@@ -11,7 +11,7 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
 
 ## Deployment Instructions
 
-1. Set up a Kubernets cluster. Please see instructions [Azure Kubernetes Service (AKS)](aks-setup.md) or [Minikube](minikube-setup.md).
+1. Set up a Kubernets cluster. Please see instructions [Azure Kubernetes Service (AKS)](aks-setup.md), [Rancher RKE](rancher-rke-setup.md), or [Minikube](minikube-setup.md).
 
 1. Deploy [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator) to allow metrics collection from the Gadgetron:
 
@@ -27,13 +27,13 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
 
     This will install the operator, Prometheus server, Grafana, etc. 
 
-1. Deploy the [Prometheus Adapter](https://github.com/DirectXMan12/k8s-prometheus-adapter):
+1. Deploy the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter):
 
     ```bash
     helm install --namespace monitoring prometheus-adapter prometheus-community/prometheus-adapter -f custom-metrics/custom-metrics.yaml
     ```
 
-    The Prometheus Adapter is responsible for aggregating metrics from Promtheus and exposing them as custom metrics that we can use for scaling the Gadgetron. 
+    The Prometheus Adapter is responsible for aggregating metrics from Promtheus and exposing them as custom metrics that we can use for scaling the Gadgetron. Be sure to pay attention to the `prometheus.url` parameter in the `custom-metrics.yaml` file. It has to point to the prometheus operator (find it with `kubectl get svc -n monitoring`).
 
 1. Deploy Gadgetron with helm chart:
 
@@ -41,7 +41,7 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
     helm install <nameofgadgetroninstance> helm/gadgetron/
     ```
 
-    To select a specific storage class (e.g. Azure Files) for dependencies, etc.:
+    To select a specific storage class (e.g. Azure Files, Longhorn) for dependencies, etc.:
 
     ```bash
     helm install <nameofgadgetroninstance> helm/gadgetron/ --set storage.storageClass=azurefile
