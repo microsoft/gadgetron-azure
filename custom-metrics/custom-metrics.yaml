@@ -1,5 +1,5 @@
 prometheus:
-    url: http://prometheus-prometheus-oper-prometheus
+    url: http://prometheus-kube-prometheus-prometheus.monitoring
     port: 9090
 rules:
     default: false

@@ -16,7 +16,9 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
 1. Deploy [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator) to allow metrics collection from the Gadgetron:
 
     ```bash
-    helm upgrade --install prometheus stable/prometheus-operator \
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    helm upgrade --install prometheus prometheus-community/prometheus-operator \
         --namespace monitoring \
         --create-namespace \
         --set commonLabels.prometheus=monitor \
@@ -28,7 +30,7 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
 1. Deploy the [Prometheus Adapter](https://github.com/DirectXMan12/k8s-prometheus-adapter):
 
     ```bash
-    helm install --namespace monitoring prometheus-adapter stable/prometheus-adapter -f custom-metrics/custom-metrics.yaml
+    helm install --namespace monitoring prometheus-adapter prometheus-community/prometheus-adapter -f custom-metrics/custom-metrics.yaml
     ```
 
     The Prometheus Adapter is responsible for aggregating metrics from Promtheus and exposing them as custom metrics that we can use for scaling the Gadgetron. 
