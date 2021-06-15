@@ -17,3 +17,50 @@ spec:
       target:
         type: AverageValue
         averageValue: {{ .Values.hpa.targetInstanceUtilization }}
+
+{{ if .Values.hpa.schedule }}
+---
+kind: CronJob
+apiVersion: batch/v1beta1
+metadata:
+  name: {{ include "gadgetron.fullname" . }}-up
+spec:
+  schedule: "{{ .Values.hpa.schedule.up.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hpa-scale
+            image: bitnami/kubectl:latest
+            command:
+            - kubectl 
+            - patch
+            - hpa
+            - {{ include "gadgetron.fullname" . }}
+            - -p
+            - '{"spec":{"minReplicas": {{ .Values.hpa.schedule.up.minReplicas }} }}'
+          restartPolicy: OnFailure
+---
+kind: CronJob
+apiVersion: batch/v1beta1
+metadata:
+  name: {{ include "gadgetron.fullname" . }}-down
+spec:
+  schedule: "{{ .Values.hpa.schedule.down.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hpa-scale
+            image: bitnami/kubectl:latest
+            command:
+            - kubectl 
+            - patch
+            - hpa
+            - {{ include "gadgetron.fullname" . }}
+            - -p
+            - '{"spec":{"minReplicas": {{ .Values.hpa.schedule.down.minReplicas }} }}'
+          restartPolicy: OnFailure
+{{ end }}

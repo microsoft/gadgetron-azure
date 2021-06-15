@@ -8,4 +8,7 @@ metadata:
 rules:
 - apiGroups: [""] # "" indicates the core API group
   resources: ["services", "pods", "endpoints"]
-  verbs: ["get", "watch", "list"]
+  verbs: ["get", "watch", "list", "patch"]
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers"]
+  verbs: ["get", "watch", "list", "patch"]
