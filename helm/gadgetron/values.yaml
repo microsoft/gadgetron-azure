@@ -14,6 +14,8 @@ fullnameOverride: ""
 
 storage:
   storageClass: standard
+  dependenciesVolumeSize: 5Gi
+  dataVolumeSize: 100Gi
 
 service:
   type: ClusterIP
