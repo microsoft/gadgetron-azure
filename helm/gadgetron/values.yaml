@@ -14,6 +14,8 @@ fullnameOverride: ""
 
 storage:
   storageClass: standard
+  dependenciesVolumeSize: 5Gi
+  dataVolumeSize: 100Gi
 
 service:
   type: ClusterIP
@@ -31,6 +33,13 @@ hpa:
   minReplicas: 1
   maxReplicas: 20
   targetInstanceUtilization: 500m
+  schedule: {}
+    # up:
+    #   schedule: "0 7 * * 1-5"
+    #   minReplicas: 5
+    # down:
+    #   schedule: "0 18 * * 1-5"
+    #   minReplicas: 1
 
 resources:
   # limits:

@@ -10,7 +10,7 @@ spec:
   storageClassName: {{ .Values.storage.storageClass }}
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .Values.storage.dependenciesVolumeSize }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -24,4 +24,4 @@ spec:
   storageClassName: {{ .Values.storage.storageClass }}
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .Values.storage.dataVolumeSize }}
