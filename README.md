@@ -59,6 +59,41 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
     kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/*/gadgetron_activity | jq .
     ```
 
+### Realistic Deployment Configuration
+
+The Gadgetron [helm chart](helm/gadgetron) has a number of settings that you will probably need to adjust for your scenario. The defaults will get you started but a more reliastic deployment might have a configuration like this:
+
+```yaml
+# Freeze the image version
+image:
+  repository: ghcr.io/gadgetron/gadgetron/gadgetron_ubuntu_2004_cuda11_cudnn8@sha256:b080afefc018b0498f70e877fe03841d1163491e2c3a1dc8cdb2c0f821e54f2f
+hpa:
+  maxReplicas: 20
+  minReplicas: 1
+  targetInstanceUtilization: 500m
+  # Between the hours of 7am and 6pm (UTC) on weekdays keep a minimum of 5 replicas 
+  schedule:
+    up:
+      schedule: "0 7 * * 1-5"
+      minReplicas: 5
+    down:
+      schedule: "0 18 * * 1-5"
+      minReplicas: 1
+# I want to use my GPU nodes
+nodeSelector:
+  agentpool: mygpunodepool
+storage:
+  dependenciesVolumeSize: 20Gi
+  # I need a TB to store data
+  dataVolumeSize: 1000Gi
+  storageClass: azurefile
+resources:
+  # Each replica must have 16 cores and 32 GB of RAM, the cluster auto scaler will add nodes if needed
+  requests:
+    cpu: 16000m
+    memory: 32Gi
+```
+
 ## Connecting with port forwarding
 
 Once the Gadgetron deployment is live, you can find the cluster ip address for the Gadgetron with something like:

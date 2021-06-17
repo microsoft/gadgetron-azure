@@ -80,3 +80,22 @@ az aks nodepool delete \
   --cluster-name $clusterName \
   --name mynodepool
 ```
+
+## Logging with Log Analytics
+
+When you are using AKS, you can easily monitor your Gadgetron deployment using [Azure Monitor Container Insights](https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview). When you [enable Container Insights](https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-onboard), all telemetry and logs with be collected in a [Log Analytics Workspace](https://docs.microsoft.com/en-us/azure/azure-monitor/logs/quick-create-workspace), where you can use the [Kusto query language](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/concepts/) to explore and aggregate data. Please consult the [Container Insights documentation](https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview).
+
+To connect an existing cluster to Azure Monitor, enable the monitoring add-on:
+
+```bash
+az aks enable-addons -a monitoring -n <cluster name> -g <cluster resource group> --workspace-resource-id "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/<workspace rg>/providers/Microsoft.OperationalInsights/workspaces/<workspace name>"
+```
+
+Once logs start flowing into the workspace you can aggregate with something like:
+
+```kusto
+let contIds = ContainerInventory | where ContainerHostname startswith "nameof-deployment-gadgetron" | distinct ContainerID | project ContainerID;
+ContainerLog | where ContainerID in (contIds) |order by TimeGenerated desc | project ContainerID, LogEntry
+```
+
+In addition to aggregating logs, you have the ability to monitor metrics (e.g. CPU or memory consumption). Check the [documentation](https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview) for details.
