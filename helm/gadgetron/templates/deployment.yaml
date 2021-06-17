@@ -4,11 +4,13 @@ metadata:
   name: {{ include "gadgetron.fullname" . }}
   labels:
     {{- include "gadgetron.labels" . | nindent 4 }}
+    app: gadgetron
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "gadgetron.selectorLabels" . | nindent 6 }}
+      app: gadgetron
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -19,6 +21,7 @@ spec:
     metadata:
       labels:
         {{- include "gadgetron.selectorLabels" . | nindent 8 }}
+        app: gadgetron
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -28,7 +31,11 @@ spec:
         - name: {{ .Chart.Name }}
           image: {{ .Values.image.repository }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{ if .Values.storage.storageServer.enable }}
+          command: ["bash", "-c", "gadgetron -E http://{{ include "gadgetron.fullname" . }}-storage:{{ .Values.storage.storageServer.port }} | tee /tmp/gadgetron_log/gadgetron.log"]
+          {{ else }}
           command: ["bash", "-c", "gadgetron | tee /tmp/gadgetron_log/gadgetron.log"]
+          {{ end }}
           lifecycle:
             preStop:
               exec:
