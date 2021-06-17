@@ -16,6 +16,9 @@ storage:
   storageClass: standard
   dependenciesVolumeSize: 5Gi
   dataVolumeSize: 100Gi
+  storageServer:
+    enable: true
+    port: 9112
 
 service:
   type: ClusterIP

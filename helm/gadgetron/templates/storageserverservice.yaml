@@ -1,7 +1,8 @@
+{{ if .Values.storage.storageServer.enable }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "gadgetron.fullname" . }}
+  name: {{ include "gadgetron.fullname" . }}-storage
   annotations:
     {{- range $key, $val := .Values.service.annotations }}
     {{ $key }}: {{ $val | quote }}
@@ -11,10 +12,11 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: 9002
+    - port: {{ .Values.storage.storageServer.port }}
+      targetPort: 9112
       protocol: TCP
-      name: gadgetron
+      name: gadgetron-storage
   selector:
     {{- include "gadgetron.selectorLabels" . | nindent 4 }}
-    app: gadgetron
+    app: storageServer
+{{ end }}
