@@ -83,7 +83,7 @@ This repo also contains a helm chart and other artifacts for deploying an SSH ju
 
 > Approach adopted from [https://github.com/kubernetes-contrib/jumpserver](https://github.com/kubernetes-contrib/jumpserver).
 
-First generate some keys for the SSH server. And store them in a Kubernetes secret. There is a script for doing this:
+First generate some keys for the SSH server and store them in a Kubernetes secret. There is a script for doing this:
 
 ```bash
 ./generate_ssh_keys.sh
