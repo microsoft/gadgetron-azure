@@ -1,8 +1,17 @@
 #!/bin/bash
 
-#Set new keys
-rm -rf /etc/ssh/ssh_host_*
-dpkg-reconfigure openssh-server
+if [[ -f /opt/ssh-server-secrets/ssh_host_rsa_key ]]; then
+    # Keys have been mounted, copy them
+    cp /opt/ssh-server-secrets/* /etc/ssh/
+    chmod 644 /etc/ssh/*.pub
+    chmod 600 /etc/ssh/ssh_host_ecdsa_key
+    chmod 600 /etc/ssh/ssh_host_ed25519_key
+    chmod 600 /etc/ssh/ssh_host_rsa_key
+else
+    # Genenerate
+    rm -rf /etc/ssh/ssh_host_*
+    dpkg-reconfigure openssh-server
+fi
 
 #Switch off DNS checking
 sed -i.bak "s/#UseDNS no/UseDNS no/g" /etc/ssh/sshd_config

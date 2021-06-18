@@ -32,6 +32,15 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.sshKeySecret }}
                   key: authorizedkeys
+          volumeMounts:
+            - name: ssh-server-secrets
+              mountPath: /opt/ssh-server-secrets
+              readOnly: true
+      volumes:
+        - name: ssh-server-secrets
+          secret:
+            secretName: {{ .Values.sshServerKeysSecret }}
+            defaultMode: 0400
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
