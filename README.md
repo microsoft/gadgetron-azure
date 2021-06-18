@@ -124,6 +124,12 @@ GTCLUSTERIP=$(kubectl get svc <gadgetron-frontend> --output=json | jq -r .spec.c
 ssh -L 9022:${GTCLUSTERIP}:9002 root@${EXTERNALIP}
 ```
 
+A simpler approach that should also work with most Kubernetes DNS schemes would be:
+
+```bash
+ssh -L 9022:<gadgetron-service-name>:9002 root@${EXTERNALIP}
+```
+
 ## Connecting with stunnel
 
 The repo contains a helm chart for deploying [stunnel](https://stunnel.org) for secure access to the Gadgetron in the cluster. To deploy the `stunnel` server, you must first have some secrets (pre-shared keys). You can generate those and store them as a secret in the cluster with:
