@@ -14,6 +14,7 @@ fullnameOverride: ""
 
 # Secret contained the authorized keys
 sshKeySecret: sshkey
+sshServerKeysSecret: ssh-server-keys
 
 service:
   type: LoadBalancer

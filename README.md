@@ -118,18 +118,25 @@ This repo also contains a helm chart and other artifacts for deploying an SSH ju
 
 > Approach adopted from [https://github.com/kubernetes-contrib/jumpserver](https://github.com/kubernetes-contrib/jumpserver).
 
-First deploy the ssh key:
+First generate some keys for the SSH server and store them in a Kubernetes secret. There is a script for doing this:
 
 ```bash
-#Get an SSH key, here we are using the one for the current user
-SSHKEY=$(cat ~/.ssh/id_rsa.pub |base64 -w 0)
-sed "s/PUBLIC_KEY/$SSHKEY/" gadgetron-ssh-secret.yaml.tmpl > gadgetron-ssh-secret.yaml
-
-#Create a secret with the key
-kubectl create -f gadgetron-ssh-secret.yaml
+./generate_ssh_keys.sh
 ```
 
-This will install the key in a kubernetes secret called `sshkey`, you can edit `gadgetron-ssh-secret.yaml` to give the key a different name. 
+This script will by default generate RSA, ECDSA, and ED25519 keys. If you would like to restrict or expand the keys generated, add the desired algorithms as arguments, e.g.:
+
+```bash
+./generate_ssh_keys.sh rsa ed25519
+```
+
+Then store the public key for the user to connect, e.g.:
+
+```bash
+kubectl create secret generic sshkey --from-file=authorizedkeys=/home/<myuser>/.ssh/id_rsa.pub 
+```
+
+Replace the the public key path with the specific key that you would like to use. Before deploying the SSH jump server you should have two secrets (check with `kubectl get secrets`) in your cluster: `sshkey` and `ssh-server-keys`.
 
 Then deploy the jump server:
 
@@ -137,10 +144,10 @@ Then deploy the jump server:
 helm install sshjump helm/sshjump
 ```
 
-Or with a custom ssh key secret:
+Or if you have given the keys other names with a custom ssh key secret:
 
 ```bash
-helm install --set sshKeySecret=alternative-ssh-secret-name sshjump2 helm/sshjump/
+helm install --set sshKeySecret=alternative-ssh-secret-name --set sshServerKeysSecret=alternative-keys-secret-name sshjump2 helm/sshjump/
 ```
 
 ### Connecting with SSH to the jump server
@@ -156,6 +163,12 @@ GTCLUSTERIP=$(kubectl get svc <gadgetron-frontend> --output=json | jq -r .spec.c
 
 #Open tunnel:
 ssh -L 9022:${GTCLUSTERIP}:9002 root@${EXTERNALIP}
+```
+
+A simpler approach that should also work with most Kubernetes DNS schemes would be:
+
+```bash
+ssh -L 9022:<gadgetron-service-name>:9002 root@${EXTERNALIP}
 ```
 
 ## Connecting with stunnel
