@@ -124,6 +124,12 @@ First generate some keys for the SSH server and store them in a Kubernetes secre
 ./generate_ssh_keys.sh
 ```
 
+This script will by default generate RSA, ECDSA, and ED25519 keys. If you would like to restrict or expand the keys generated, add the desired algorithms as arguments, e.g.:
+
+```bash
+./generate_ssh_keys.sh rsa ed25519
+```
+
 Then store the public key for the user to connect, e.g.:
 
 ```bash

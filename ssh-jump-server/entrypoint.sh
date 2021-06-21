@@ -1,12 +1,12 @@
 #!/bin/bash
 
-if [[ -f /opt/ssh-server-secrets/ssh_host_rsa_key ]]; then
+if [[ -d /opt/ssh-server-secrets ]]; then
     # Keys have been mounted, copy them
     cp /opt/ssh-server-secrets/* /etc/ssh/
     chmod 644 /etc/ssh/*.pub
-    chmod 600 /etc/ssh/ssh_host_ecdsa_key
-    chmod 600 /etc/ssh/ssh_host_ed25519_key
-    chmod 600 /etc/ssh/ssh_host_rsa_key
+    for f in $(ls /etc/ssh/ssh_host_*_key); do
+        chmod 600 $f
+    done
 else
     # Genenerate
     rm -rf /etc/ssh/ssh_host_*
