@@ -95,7 +95,7 @@ Once logs start flowing into the workspace you can aggregate with something like
 
 ```kusto
 let contIds = ContainerInventory | where ContainerHostname startswith "nameof-deployment-gadgetron" | distinct ContainerID | project ContainerID;
-ContainerLog | where ContainerID in (contIds) |order by TimeGenerated desc | project ContainerID, LogEntry
+ContainerLog | where ContainerID in (contIds) | order by TimeGenerated desc | project ContainerID, LogEntry
 ```
 
 In addition to aggregating logs, you have the ability to monitor metrics (e.g. CPU or memory consumption). Check the [documentation](https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview) for details.
