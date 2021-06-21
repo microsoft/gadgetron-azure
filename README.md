@@ -124,13 +124,13 @@ First generate some keys for the SSH server and store them in a Kubernetes secre
 ./generate_ssh_keys.sh
 ```
 
-Then store the public for the user to connect, e.g.:
+Then store the public key for the user to connect, e.g.:
 
 ```bash
 kubectl create secret generic sshkey --from-file=authorizedkeys=/home/<myuser>/.ssh/id_rsa.pub 
 ```
 
-Replace the path the public key with the specific key that you would like to use. Before deploying the SSH jump server you should two secrets (check with `kubectl get keys`) in your cluster: `sshkey` and `ssh-server-keys`.
+Replace the the public key path with the specific key that you would like to use. Before deploying the SSH jump server you should have two secrets (check with `kubectl get secrets`) in your cluster: `sshkey` and `ssh-server-keys`.
 
 Then deploy the jump server:
 
