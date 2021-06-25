@@ -39,7 +39,7 @@ spec:
             - mountPath: "/tmp/gadgetron"
               name: {{ include "gadgetron.dependenciesname" . }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.storage.storageServer.resources | nindent 12 }}
       volumes:
       - name: {{ include "gadgetron.dependenciesname" . }}
         persistentVolumeClaim:
