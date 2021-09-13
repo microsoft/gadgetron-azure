@@ -32,6 +32,10 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.sshKeySecret }}
                   key: authorizedkeys
+            {{ if .Values.sshClientAliveInterval }}
+            - name: CLIENTALIVEINTERVAL
+              value: {{ .Values.sshClientAliveInterval | quote }}
+            {{ end }}
           volumeMounts:
             - name: ssh-server-secrets
               mountPath: /opt/ssh-server-secrets
