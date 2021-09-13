@@ -16,6 +16,9 @@ fullnameOverride: ""
 sshKeySecret: sshkey
 sshServerKeysSecret: ssh-server-keys
 
+# SSH server settings
+sshClientAliveInterval: 60
+
 service:
   type: LoadBalancer
   port: 22

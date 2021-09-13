@@ -16,6 +16,10 @@ fi
 #Switch off DNS checking
 sed -i.bak "s/#UseDNS no/UseDNS no/g" /etc/ssh/sshd_config
 
+if [[ -n "${CLIENTALIVEINTERVAL}" ]]; then
+    sed -i.bak "s/#ClientAliveInterval 0/ClientAliveInterval ${CLIENTALIVEINTERVAL}/g" /etc/ssh/sshd_config
+fi
+
 #Import public key
 mkdir -p /root/.ssh
 touch /root/.ssh/authorized_keys
