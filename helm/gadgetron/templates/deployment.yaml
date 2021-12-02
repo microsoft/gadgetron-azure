@@ -80,6 +80,10 @@ spec:
         configMap:
           name: {{ include "gadgetron.fullname" . }}-scripts
           defaultMode: 0777
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}    
+      {{- end }}  
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
