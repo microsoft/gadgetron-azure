@@ -19,3 +19,9 @@ version: 0.2.0
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application.
 appVersion: latest
+
+dependencies:
+- name: postgresql
+  alias: storagedb
+  version: 10.14.4
+  repository: https://charts.bitnami.com/bitnami
