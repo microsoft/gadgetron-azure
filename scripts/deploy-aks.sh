@@ -19,7 +19,6 @@ Options:
   --location,-l <cluster location>    Location of cluster (default: ${cluster_location})
   --system-vm-size,-s <node size>     The size of the system VMs (default: ${system_node_vm_size})
   --user-vm-size,-u <node size>       The size of the user VMs (default: ${user_node_vm_size})
-  --verbose, -v                       Verbose output
   -h, --help                          Brings up this menu
 EOF
 }
@@ -49,10 +48,6 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    --verbose|-v)
-      verbose=1
-      shift
-      ;;
     -h|--help)
       usage
       exit
@@ -65,6 +60,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -z "$cluster_name" ]]; then
+  echo "You must provide a cluster name"
+  usage
+  exit 1
+fi
 
 rg_name="${cluster_name}-rg"
 loga_name="${cluster_name}-logs"
@@ -125,3 +125,33 @@ else
         --max-count 10 \
         --node-vm-size "$user_node_vm_size" 
 fi
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+    --namespace monitoring \
+    --create-namespace \
+    --set commonLabels.prometheus=monitor \
+    --set nodeSelector.agentpool=system \
+    --set prometheus.prometheusSpec.serviceMonitorSelector.matchLabels.prometheus=monitor
+
+helm upgrade --install --namespace monitoring prometheus-adapter prometheus-community/prometheus-adapter -f "$(dirname "$0")/../custom-metrics/custom-metrics.yaml" --set nodeSelector.agentpool=system 
+
+for wait in {0..10}; do
+    if kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1 2>&1 >/dev/null; then
+        break
+    else
+        if [[ "${wait}" == "10" ]]; then
+            echo "Custom metrics failed to deploy"
+            exit 1
+        else
+            sleep 10
+        fi
+    fi
+done
+
+storageServerSa="${cluster_name}sa"
+storageServerSa="$(echo "$storageServerSa" | tr '[:upper:]' '[:lower:]' | tr -d '-')"
+az storage account create -n "$storageServerSa" -g "$rg_name" -l "$cluster_location"
+kubectl create secret generic storageserversa --from-literal=connectionString="$(az storage account show-connection-string --name "$storageServerSa" | jq -r .connectionString)" --dry-run=client -o yaml | kubectl apply -f -
