@@ -27,6 +27,17 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      initContainers:
+        - name: check-storage-server-ready
+          image: yauritux/busybox-curl
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              until curl http://{{ include "gadgetron.fullname" . }}-storage.{{ .Release.Namespace }}:8080/healthcheck; do
+                echo waiting for storage
+                sleep 2
+              done
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.image.repository }}

@@ -47,7 +47,7 @@ EOF
 
 for wait in {0..20}; do
     if [[ "$(kubectl get job "$job_name" -o jsonpath={.status.active})" == "1" ]]; then
-        echo "Waiting for end to end test to finish"
+        echo "Waiting for end-to-end test to finish"
         sleep 30
     else
         break
@@ -55,7 +55,7 @@ for wait in {0..20}; do
 done
 
 if [[ "$(kubectl get job "$job_name" -o jsonpath={.status.succeeded})" == "1" ]]; then
-    echo "End to end test pass"
+    echo "End-to-end test pass"
 else
     echo "End to end test failed"
     kubectl logs "job.batch/${job_name}"
