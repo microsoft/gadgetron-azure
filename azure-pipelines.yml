@@ -1,0 +1,41 @@
+variables:
+  azureConnection: 'BiomedicalImaging-NonProd(87d8acb3-5176-4651-b457-6ab9cefd8e3d)'
+  testEnvironmentName: 'gadgetron$(System.PullRequest.PullRequestId)'
+
+pool: 
+  vmImage: ubuntu-latest
+
+# Trigger when merging to master
+trigger:
+- main
+
+# Trigger for PRs that merge to master
+pr:
+- main
+
+jobs:
+- job: DeployAndTest
+  displayName: "Deploy and test"
+  steps:
+  - task: AzureCLI@2
+    displayName: Deploy and test
+    inputs:
+      azureSubscription: $(azureConnection)
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        set -euo pipefail
+        ./scripts/deploy-aks.sh -n $(testEnvironmentName)
+        helm install $(testEnvironmentName) helm/gadgetron/ --wait --set storage.storageClass=azurefile --set nodeSelector.agentpool=userpool
+        ./scripts/test_deployment.sh $(testEnvironmentName)
+
+  - task: AzureCLI@2
+    displayName: Remove cluster
+    inputs:
+      azureSubscription: $(azureConnection)
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        set -euo pipefail
+        rg_name="$(testEnvironmentName)-rg"
+        az group delete -n "$rg_name" -y
