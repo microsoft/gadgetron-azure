@@ -2,10 +2,12 @@ variables:
   azureConnection: 'BiomedicalImaging-NonProd(87d8acb3-5176-4651-b457-6ab9cefd8e3d)'
   ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
     testEnvironmentName: 'gtazure$(System.PullRequest.PullRequestId)'
-  ${{ elseif eq(variables['Build.Reason'], 'Manual' ) }}:
+  ${{ if eq(variables['Build.Reason'], 'Manual' ) }}:
     testEnvironmentName: 'gtazureman$(Build.BuildId)'
   ${{ elseif eq(variables['Build.Reason'], 'IndividualCI' ) }}:
     testEnvironmentName: 'gtazureci$(Build.BuildId)'
+  ${{ else }}:
+    testEnvironmentName: 'gtazure$(System.PullRequest.PullRequestId)'
 
 pool: 
   vmImage: ubuntu-latest
