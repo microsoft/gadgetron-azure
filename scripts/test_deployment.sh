@@ -64,9 +64,17 @@ else
 fi  
 
 # Checking the number of replicas, which should have increased:
-if [[ "$(kubectl get deployment ${release_name}-gadgetron -o jsonpath={.spec.replicas})" -gt 1 ]]; then
-    echo "Number of replicas has increased"
-else
-    echo "The number of replicas has not increased as expected"
-    exit 1
-fi
+for wait in {0..20}; do
+  if [[ "$(kubectl get deployment ${release_name}-gadgetron -o jsonpath={.spec.replicas})" -gt 1 ]]; then
+      echo "Number of replicas has increased"
+      break
+  else
+      if [[ "${wait}" == "20" ]]; then
+        echo "The number of replicas failed to scale in allowed time."
+        exit 1
+      else
+        echo "The number of replicas has not increased as expected....sleeping"
+        sleep 30
+      fi
+  fi
+done
