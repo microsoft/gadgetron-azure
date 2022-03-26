@@ -66,7 +66,7 @@ if [[ -z "$cluster_name" ]]; then
   exit 1
 fi
 
-rg_name="${cluster_name}-rg"
+testEnvironmentName
 loga_name="${cluster_name}-logs"
 kubernetes_version="1.23.3"
 system_nodepool_name="system"

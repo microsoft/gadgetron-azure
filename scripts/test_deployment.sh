@@ -2,6 +2,7 @@
 
 release_name="$1"
 job_name="gadgtron-test-$RANDOM"
+gadgetron_image="$(jq -r .gadgetron "$(dirname "$0")/../dependencies.json")"
 
 cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
@@ -14,7 +15,7 @@ spec:
     spec:
       containers:
       - name: gt-test
-        image: ghcr.io/gadgetron/gadgetron/gadgetron_ubuntu_rt_cuda:latest
+        image: ${gadgetron_image}
         command: [ "/bin/bash", "-c", "/opt/scripts/gadgetron_test.sh" ]
         volumeMounts:
         - name: script-volume
