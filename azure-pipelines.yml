@@ -1,11 +1,6 @@
 variables:
   azureConnection: 'BiomedicalImaging-NonProd(87d8acb3-5176-4651-b457-6ab9cefd8e3d)'
-  isPR: $[eq(variables['Build.Reason'], 'PullRequest')]
-  isCI: $[or(eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.Reason'], 'BatchedCI'))]
-${{ if eq(variables.isCI, 'true') }}:
   testEnvironmentName: 'gtazure$(System.PullRequest.PullRequestId)'
-${{ else }}:
-  testEnvironmentName: 'gtazure-ci'
 
 pool: 
   vmImage: ubuntu-latest
