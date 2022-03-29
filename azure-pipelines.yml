@@ -1,0 +1,49 @@
+variables:
+  azureConnection: 'BiomedicalImaging-NonProd(87d8acb3-5176-4651-b457-6ab9cefd8e3d)'
+  ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+    testEnvironmentName: 'gtazure$(System.PullRequest.PullRequestId)'
+  ${{ elseif eq(variables['Build.Reason'], 'Manual' ) }}:
+    testEnvironmentName: 'gtazureman$(Build.BuildId)'
+  ${{ elseif eq(variables['Build.Reason'], 'IndividualCI' ) }}:
+    testEnvironmentName: 'gtazureci$(Build.BuildId)'
+
+pool: 
+  vmImage: ubuntu-latest
+
+# Trigger when merging to master
+trigger:
+- main
+
+# Trigger for PRs that merge to master
+pr:
+- main
+
+jobs:
+- job: DeployAndTest
+  displayName: "Deploy and test"
+  steps:
+  - task: AzureCLI@2
+    displayName: Deploy and test
+    inputs:
+      azureSubscription: $(azureConnection)
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        set -euo pipefail
+        echo "TESTENVIRONMENT NAME: $(testEnvironmentName)"
+        ./scripts/deploy-aks.sh -n $(testEnvironmentName)
+        gadgetron_image="$(jq -r .gadgetron dependencies.json)"
+        deployment_name="gt${RANDOM}"
+        helm install "$deployment_name" helm/gadgetron/ --wait --set storage.storageClass=azurefile --set nodeSelector.agentpool=userpool --set image.repository="$gadgetron_image"
+        ./scripts/test_deployment.sh "$deployment_name"
+
+  - task: AzureCLI@2
+    displayName: Remove cluster
+    inputs:
+      azureSubscription: $(azureConnection)
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        set -euo pipefail
+        rg_name="$(testEnvironmentName)-rg"
+        az group delete -n "$rg_name" -y

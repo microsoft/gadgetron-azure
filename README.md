@@ -11,7 +11,17 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
 
 ## Deployment Instructions
 
-1. Set up a Kubernets cluster. Please see instructions [Azure Kubernetes Service (AKS)](aks-setup.md), [Rancher RKE](rancher-rke-setup.md), or [Minikube](minikube-setup.md).
+The repository contains a [script](scripts/deploy-aks.sh) for setting up an Azure Kubernetes Service (AKS) cluster. You can use this to deploy a test cluster for the Gadgetron:
+
+```bash
+./scripts/deploy-aks.sh -n <NAME OF CLUSTER>
+```
+
+Use `./scripts/deploy-aks.sh --help` to see configuration options.
+
+You can also manually deploy the cluster and necessary components:
+
+1. Set up a Kubernets cluster. Please see instructions for [Azure Kubernetes Service (AKS)](aks-setup.md).
 
 1. Deploy [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator) to allow metrics collection from the Gadgetron:
 
@@ -35,22 +45,30 @@ The Gadgetron uses a script to discover remote worker nodes. The script is speci
 
     The Prometheus Adapter is responsible for aggregating metrics from Promtheus and exposing them as custom metrics that we can use for scaling the Gadgetron. Be sure to pay attention to the `prometheus.url` parameter in the `custom-metrics.yaml` file. It has to point to the prometheus operator (find it with `kubectl get svc -n monitoring`).
 
+1. Deploy a storage account for the [mrd-storage-server](https://github.com/ismrmrd/mrd-storage-server):
+
+  ```bash
+  storageServerSa="${cluster_name}sa"
+  storageServerSa="$(echo "$storageServerSa" | tr '[:upper:]' '[:lower:]' | tr -d '-')"
+  az storage account create -n "$storageServerSa" -g "$rg_name" -l "$cluster_location"
+  kubectl create secret generic storageserversa --from-literal=connectionString="$(az storage account show-connection-string --name "$storageServerSa" | jq -r .connectionString)" --dry-run=client -o yaml | kubectl apply -f -
+  ```
+
+  If you choose a different secret name. Make a note of it and supply it when deploying the help chart below.
+
 1. Deploy Gadgetron with helm chart:
-
-    ```bash
-    helm install <nameofgadgetroninstance> helm/gadgetron/
-    ```
-
-    To select a specific storage class (e.g. Azure Files, Longhorn) for dependencies, etc.:
 
     ```bash
     helm install <nameofgadgetroninstance> helm/gadgetron/ --set storage.storageClass=azurefile
     ```
 
+    >Note: Select an appropriate `storageClass` for your Kubernetes setup.
+
+
     To use a specific node pool:
 
     ```bash
-    helm install --set nodeSelector.agentpool=<nodepoolname> <nameofgadgetroninstance> helm/gadgetron/
+    helm install --set nodeSelector.agentpool=userpool <nameofgadgetroninstance> helm/gadgetron/
     ```
 
 1. Check that metrics are flowing. After deploying the Gadgetron, it should start emitting metrics and they should be exposed as custom metrics. You can check that you can read them with:
@@ -66,7 +84,7 @@ The Gadgetron [helm chart](helm/gadgetron) has a number of settings that you wil
 ```yaml
 # Freeze the image version
 image:
-  repository: ghcr.io/gadgetron/gadgetron/gadgetron_ubuntu_2004_cuda11_cudnn8@sha256:b080afefc018b0498f70e877fe03841d1163491e2c3a1dc8cdb2c0f821e54f2f
+  repository: ghcr.io/gadgetron/gadgetron/gadgetron_ubuntu_rt_cuda@sha256:1d6497a60b6863d70a4f41dbfbff1eda3aa980d1837a9b9a7ef8ac1c69233116
 hpa:
   maxReplicas: 20
   minReplicas: 1
@@ -81,7 +99,7 @@ hpa:
       minReplicas: 1
 # I want to use my GPU nodes
 nodeSelector:
-  agentpool: mygpunodepool
+  agentpool: userpool
 storage:
   dependenciesVolumeSize: 20Gi
   # I need a TB to store data

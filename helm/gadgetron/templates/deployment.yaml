@@ -27,15 +27,22 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      initContainers:
+        - name: check-storage-server-ready
+          image: yauritux/busybox-curl
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              until curl http://{{ include "gadgetron.fullname" . }}-storage.{{ .Release.Namespace }}:8080/healthcheck; do
+                echo waiting for storage
+                sleep 2
+              done
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.image.repository }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{ if .Values.storage.storageServer.enable }}
-          command: ["bash", "-c", "gadgetron -E http://{{ include "gadgetron.fullname" . }}-storage:{{ .Values.storage.storageServer.port }} | tee /tmp/gadgetron_log/gadgetron.log"]
-          {{ else }}
-          command: ["bash", "-c", "gadgetron | tee /tmp/gadgetron_log/gadgetron.log"]
-          {{ end }}
+          command: ["bash", "-c", "/opt/entrypoint.sh -E http://{{ include "gadgetron.fullname" . }}-storage.{{ .Release.Namespace }}:8080 | tee /tmp/gadgetron_log/gadgetron.log"]
           lifecycle:
             preStop:
               exec:
@@ -46,8 +53,6 @@ spec:
           ports:
           - containerPort: 9002
           volumeMounts:
-            - mountPath: "/tmp/gadgetron"
-              name: {{ include "gadgetron.dependenciesname" . }}
             - mountPath: "/tmp/gadgetron_data"
               name: {{ include "gadgetron.dataname" . }}
             - mountPath: "/tmp/gadgetron_log"
@@ -68,9 +73,6 @@ spec:
               name: gadgetronlog
 #      terminationGracePeriodSeconds: 600
       volumes:
-      - name: {{ include "gadgetron.dependenciesname" . }}
-        persistentVolumeClaim:
-          claimName: {{ include "gadgetron.dependenciesname" . }}
       - name: {{ include "gadgetron.dataname" . }}
         persistentVolumeClaim:
           claimName: {{ include "gadgetron.dataname" . }}
