@@ -12,6 +12,10 @@ spec:
       labels:
         component: {{ include "gadgetron.fullname" . }}-storage
     spec:
+    {{- with .Values.storageServer.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       initContainers:
         - name: check-db-ready
           image: jbergknoff/postgresql-client
@@ -26,6 +30,7 @@ spec:
       containers:
         - name: mrd-storage-server
           image: {{ .Values.storageServer.image }}
+          imagePullPolicy: {{ .Values.storageServer.imagePullPolicy }}
           env:
             - name: MRD_STORAGE_SERVER_DATABASE_PROVIDER
               value: postgresql
@@ -49,6 +54,8 @@ spec:
           - name: secrets
             mountPath: /etc/secrets
             readOnly: true
+          resources:
+            {{- toYaml .Values.storageServer.resources | nindent 12 }}
       volumes:
       - name: secrets
         projected:
@@ -60,6 +67,15 @@ spec:
               items:
                 - key: {{ .Values.storageServer.storageAccountConnectionStringSecretDataKey }}
                   path: storage-connection-string
+      {{- with .Values.storageServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}    
+      {{- end }}  
+      {{- with .Values.storageServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
 ---
 kind: Service
 apiVersion: v1

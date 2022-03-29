@@ -62,14 +62,9 @@ storageServer:
   storageAccountConnectionStringSecretDataKey: connectionString
 
   imagePullSecrets: []
-  podAnnotations: {}
   nodeSelector: {}
   tolerations: []
-  affinity: {}
-  podSecurityContext: {}
-  securityContext: {}
   resources: {}
 
 storagedb:
-  usePasswordFile: true
   postgresqlDatabase: mrd-storage-server
