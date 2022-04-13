@@ -117,13 +117,27 @@ az aks get-credentials -n "$cluster_name" -g "$rg_name" --overwrite-existing
 if [[ -n "$(az aks nodepool list --cluster-name "$cluster_name" -g "$rg_name" | jq --arg pool "$user_nodepool_name" '.[] | select(.name == $pool)')" ]]; then
     echo "Nodepool exists. Skipping."
 else
-    az aks nodepool add -n "$user_nodepool_name" --cluster-name "$cluster_name" -g "$rg_name" \
+
+    #If this is a GPU node pool, we will add some additional flags
+    if [[ "${user_node_vm_size}" =~ "Standard_N" ]]; then
+      az aks nodepool add -n "$user_nodepool_name" --cluster-name "$cluster_name" -g "$rg_name" \
+        --kubernetes-version "$kubernetes_version" \
+        --enable-cluster-autoscaler \
+        --node-count 1 \
+        --min-count 0 \
+        --max-count 10 \
+        --node-vm-size "$user_node_vm_size"  \
+        --node-taints sku=gpu:NoSchedule \
+        --aks-custom-headers UseGPUDedicatedVHD=true
+    else  
+      az aks nodepool add -n "$user_nodepool_name" --cluster-name "$cluster_name" -g "$rg_name" \
         --kubernetes-version "$kubernetes_version" \
         --enable-cluster-autoscaler \
         --node-count 1 \
         --min-count 0 \
         --max-count 10 \
         --node-vm-size "$user_node_vm_size" 
+    fi
 fi
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
