@@ -66,6 +66,14 @@ if [[ -z "$cluster_name" ]]; then
   exit 1
 fi
 
+if [[ "$(az provider list --query "[?namespace=='Microsoft.ContainerService']" | jq '.[] | length > 0')" != "true" ]]; then
+  echo "Attempting to register provider namespace. This will fail if you are not owner of subscription"
+  az provider register --namespace Microsoft.ContainerService
+fi
+
+{ az extension add --name aks-preview >/dev/null; } 2>&1
+{ az extension update --name aks-preview >/dev/null; } 2>&1
+
 rg_name="${cluster_name}-rg"
 loga_name="${cluster_name}-logs"
 kubernetes_version="1.23.3"
