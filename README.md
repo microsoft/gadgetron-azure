@@ -71,6 +71,8 @@ You can also manually deploy the cluster and necessary components:
     helm install --set nodeSelector.agentpool=userpool <nameofgadgetroninstance> helm/gadgetron/
     ```
 
+    For details on targeting a GPU node pool, see below or [test_values.yml](scripts/test_values.yml)
+
 1. Check that metrics are flowing. After deploying the Gadgetron, it should start emitting metrics and they should be exposed as custom metrics. You can check that you can read them with:
 
     ```bash
@@ -84,7 +86,7 @@ The Gadgetron [helm chart](helm/gadgetron) has a number of settings that you wil
 ```yaml
 # Freeze the image version
 image:
-  repository: ghcr.io/gadgetron/gadgetron/gadgetron_ubuntu_rt_cuda@sha256:1d6497a60b6863d70a4f41dbfbff1eda3aa980d1837a9b9a7ef8ac1c69233116
+  repository: ghcr.io/gadgetron/gadgetron/gadgetron_ubuntu_rt_cuda@sha256:7f55c1fd1cdd45c898884265649dedfe85ac297384ec5f096e3da9298fe61a16
 hpa:
   maxReplicas: 20
   minReplicas: 1
@@ -100,12 +102,20 @@ hpa:
 # I want to use my GPU nodes
 nodeSelector:
   agentpool: userpool
+tolerations: 
+  - key: "sku"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
 storage:
   dependenciesVolumeSize: 20Gi
   # I need a TB to store data
   dataVolumeSize: 1000Gi
   storageClass: azurefile
 resources:
+  # Make sure you get a GPU allocated
+  limits:
+    nvidia.com/gpu: 1
   # Each replica must have 16 cores and 32 GB of RAM, the cluster auto scaler will add nodes if needed
   requests:
     cpu: 16000m

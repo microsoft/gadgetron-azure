@@ -1,0 +1,19 @@
+storage:
+  storageClass: azurefile
+  dataVolumeSize: 10Gi
+
+resources:
+  limits:
+    nvidia.com/gpu: 1
+  requests:
+    cpu: 2000m
+    memory: 25Gi
+
+nodeSelector:
+  agentpool: userpool
+
+tolerations: 
+  - key: "sku"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"

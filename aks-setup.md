@@ -66,11 +66,29 @@ az aks nodepool add \
   --max-count 3 
 ```
 
+If you are adding a GPU node pool, please follow instructions on [GPU clusters](https://docs.microsoft.com/en-us/azure/aks/gpu-cluster). Specifically, add appropriate custom headers and taints to the node pools:
+
+```
+az aks nodepool add \
+  --resource-group $resourceGroupName \
+  --cluster-name $clusterName \
+  --name mynodepool \
+  --node-vm-size Standard_NC6s_v3 \
+  --node-count 1 \
+  --enable-cluster-autoscaler \
+  --min-count 1 \
+  --max-count 3 \
+  --node-taints sku=gpu:NoSchedule \
+  --aks-custom-headers UseGPUDedicatedVHD=true
+```
+
 And then to deploy a new gagetron deployment to that node pool:
 
 ```
 helm install --set nodeSelector.agentpool=mynodepool mygadgetrondeployment helm/gadgetron/
 ```
+
+If this is a GPU node pool, you need to add tolerances for the applied taints, see for example [test_values.yml](scripts/test_values.yml).
 
 To delete the node pool, first remove any deployment on the node pool and then:
 

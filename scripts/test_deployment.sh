@@ -44,6 +44,8 @@ data:
     cd /opt/integration-test
     python get_data.py
     python ./run_gadgetron_test.py -e -a ${release_name}-gadgetron -p 9002 cases/generic_grappa_snr_R1_PEFOV100_PERes100.cfg
+    python ./run_gadgetron_test.py -e -a ${release_name}-gadgetron -p 9002 cases/gpu_grappa_simple.cfg
+    python ./run_gadgetron_test.py -e -a ${release_name}-gadgetron -p 9002 cases/gpu_fixed_radial_mode1_cg.cfg
 EOF
 
 for wait in {0..20}; do

@@ -66,6 +66,14 @@ if [[ -z "$cluster_name" ]]; then
   exit 1
 fi
 
+if [[ "$(az provider list --query "[?namespace=='Microsoft.ContainerService']" | jq '.[] | length > 0')" != "true" ]]; then
+  echo "Attempting to register provider namespace. This will fail if you are not owner of subscription"
+  az provider register --namespace Microsoft.ContainerService
+fi
+
+{ az extension add --name aks-preview >/dev/null; } 2>&1
+{ az extension update --name aks-preview >/dev/null; } 2>&1
+
 rg_name="${cluster_name}-rg"
 loga_name="${cluster_name}-logs"
 kubernetes_version="1.23.3"
@@ -117,13 +125,27 @@ az aks get-credentials -n "$cluster_name" -g "$rg_name" --overwrite-existing
 if [[ -n "$(az aks nodepool list --cluster-name "$cluster_name" -g "$rg_name" | jq --arg pool "$user_nodepool_name" '.[] | select(.name == $pool)')" ]]; then
     echo "Nodepool exists. Skipping."
 else
-    az aks nodepool add -n "$user_nodepool_name" --cluster-name "$cluster_name" -g "$rg_name" \
+
+    #If this is a GPU node pool, we will add some additional flags
+    if [[ "${user_node_vm_size}" =~ "Standard_N" ]]; then
+      az aks nodepool add -n "$user_nodepool_name" --cluster-name "$cluster_name" -g "$rg_name" \
+        --kubernetes-version "$kubernetes_version" \
+        --enable-cluster-autoscaler \
+        --node-count 1 \
+        --min-count 0 \
+        --max-count 10 \
+        --node-vm-size "$user_node_vm_size"  \
+        --node-taints sku=gpu:NoSchedule \
+        --aks-custom-headers UseGPUDedicatedVHD=true
+    else  
+      az aks nodepool add -n "$user_nodepool_name" --cluster-name "$cluster_name" -g "$rg_name" \
         --kubernetes-version "$kubernetes_version" \
         --enable-cluster-autoscaler \
         --node-count 1 \
         --min-count 0 \
         --max-count 10 \
         --node-vm-size "$user_node_vm_size" 
+    fi
 fi
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
