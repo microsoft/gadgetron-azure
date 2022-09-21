@@ -76,7 +76,7 @@ fi
 
 rg_name="${cluster_name}-rg"
 loga_name="${cluster_name}-logs"
-kubernetes_version="1.23.3"
+kubernetes_version="1.23.5"
 system_nodepool_name="system"
 user_nodepool_name="userpool"
 
